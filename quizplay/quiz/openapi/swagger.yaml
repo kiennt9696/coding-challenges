@@ -1,0 +1,111 @@
+openapi: 3.0.0
+info:
+  description: Vocabulary Quiz Challenge
+  version: 1.0.0
+  title:  Vocabulary Quiz Challenge
+  contact:
+    email: kiennt9696@gmail.com
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+tags:
+  - name: alive
+    description: Keepalive
+paths:
+  /ping:
+    get:
+      tags:
+        - alive
+      summary: Api keepalive
+      description: Api keepalive
+      operationId: quiz.controllers.healthz_controller.is_alive
+      responses:
+        "200":
+          description: is alive
+  /quizzes/{quiz_id}/participants:
+    post:
+      summary: Add a user as a participant in a quiz
+      parameters:
+        - name: quiz_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_id:
+                  type: string
+      operationId: quiz.controllers.quizplay.join_quiz
+      responses:
+        "204":
+          description: User successfully joined quiz
+        "404":
+          description: Quiz not found
+  /quizzes/{quiz_id}/answer:
+    post:
+      summary: A user submit an answer
+      parameters:
+        - name: quiz_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_id:
+                  type: string
+                question_id:
+                  type: string
+                answer:
+                  type: string
+      operationId: quiz.controllers.quizplay.submit_answer
+      responses:
+        "200":
+          description: User successfully submit the answer
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /leaderboard/{quiz_id}:
+    post:
+      summary: Get full leaderboard | or user score | or user rank | or top k users | or m users around user's rank with 5 modes (score, rank, top, around, full)
+      parameters:
+        - name: quiz_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_id:
+                  type: string
+                mode:
+                  type: string
+                user_rank:
+                  type: number
+      operationId: quiz.controllers.leaderboard.get_leaderboard
+      responses:
+        "200":
+          description: User successfully get leaderboard
+          content:
+            application/json:
+              schema:
+                type: object
+servers:
+  - url: http://0.0.0.0:8081/v1
