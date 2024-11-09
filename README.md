@@ -1,73 +1,107 @@
-# Real-Time Vocabulary Quiz Coding Challenge
+# Vocabulary Quiz System Design
+## Functional Requirements
+- Multiple users can join a quiz session and play it.
+- Users can submit answers and their scores should be updated in real-time, the scoring system must be accurate and consistent.
+- Leaderboard for a quiz should display the current standings of all participants (top **k** users + **m** users around him).
+- Be able to extend leaderboard to many types such as: daily, weekly, monthly.
+- Be able to view quiz challenge histories.
+## Non-functional Requirements
+  - Low latency
+  - High availability
+  - Reliability
+  - Minimal operational overhead
+  - Scalability
+## Back of the Envelope Estimation
+  - MAU: 50 million
+  - DAU: 10 million (100 users/s on average => 1000 users/s at peak)
+  - QPS for users: assuming a user plays 10 games a day. Hence, QPS = 10000.
+  - QPS for leaderboard: 1000
 
-## Overview
+Assuming that, we need to store the user id and score. 
++ 15 character string(15 bytes) for user_id 
++ a 64-bit (8 bytes) integer for the score
++ overhead: 30 (bytes)
 
-Welcome to the Real-Time Quiz coding challenge! Your task is to create a technical solution for a real-time quiz feature for an English learning application. This feature will allow users to answer questions in real-time, compete with others, and see their scores updated live on a leaderboard.
+=> ~ 50 bytes
 
-## Acceptance Criteria
+So total memory required on a monthly basis would be 50*50 million bytes i.e. 2500 MB memory.
+## High level design
+![](realtimeLB.png)
+### Components
+#### 1. Load Balancer (LB)
+The gateway between services. Not only handling load balancing but also:
+- Authentication & Authorization
+- Rate Limiting & IP Restrictions
+#### Quiz UI
+The user interface for quiz application: web, mobile apps.  
 
-1. **User Participation**:
-   - Users should be able to join a quiz session using a unique quiz ID.
-   - The system should support multiple users joining the same quiz session simultaneously.
+Via **LB**, interact with:
+- **Vocabulary Quiz Service** to get quizzes info, quiz histories to display to users.
+- **QuizPlay Service** to start playing a quiz and submit answers.
+- **Leaderboard Service** to get the ranking of users amongst other users and top k users.
+- **Websocket Handler** to get realtime update on leaderboard and other stuff.
+#### 2. User Service
+Manages user data and interacts with the Postgres Cluster for user-related information.
 
-2. **Real-Time Score Updates**:
-   - As users submit answers, their scores should be updated in real-time.
-   - The scoring system must be accurate and consistent.
+Interact with:
+- **S3**, a blob storage, or **CDN** to store and get users' profile photos.
+- **Postgres Cluster** to save user data.
+- **Redis Cluster** to cache and retrieve some user data to avoid hitting to Postgres everytime.
+#### 3. Vocabulary Quiz Service
+Handles vocabulary quizzes and accesses quiz-related data from the Postgres Cluster.
 
-3. **Real-Time Leaderboard**:
-   - A leaderboard should display the current standings of all participants.
-   - The leaderboard should update promptly as scores change.
+Interact with:
+- **S3** or **CDN** to upload or get some media contents for quizzes (a quiz may contain audio or images or videos).
+- **Postgres Cluster** to retrieve or update quizzes.
+- **Redis Cluster** to cache and retrieve some quiz data to avoid hitting to Postgres everytime.
 
-## Challenge Requirements
+#### 4. Leaderboard Service
+Provide access to leaderboard related info
 
-### Part 1: System Design
+Interact with:
+- **Redis cluster** to get leaderboard related info
+- **UserService** to get some user info to display in leaderboard such as name or avatar for top users.
 
-1. **System Design Document**:
-   - **Architecture Diagram**: Create an architecture diagram illustrating how different components of the system interact. This should include all components required for the feature, including the server, client applications, database, and any external services.
-   - **Component Description**: Describe each component's role in the system.
-   - **Data Flow**: Explain how data flows through the system from when a user joins a quiz to when the leaderboard is updated.
-   - **Technologies and Tools**: List and justify the technologies and tools chosen for each component.
+#### 5. QuizPlay Service
+The service to start playing a quiz and update scores in the leaderboard.
 
-### Part 2: Implementation
+Interact with:
+- **Redis Cluster** to update users' scores in the leaderboard in an **ordered set** and put events to a Redis stream which later are consumed by **Custom CDC Service** for persisting quiz play histories.
+- **Postgres Cluster** to get quiz play histories.
 
-1. **Pick a Component**:
-   - Implement one of the core components below using the technologies that you are comfortable with. The rest of the system can be mocked using mock services or data.
+#### 6. Websocket Handler & Websocket Manager
+**Websocket Handler**: handle sending realtime changes to clients.
+**Websocket Manager**: When scaling websockets each **Websocket Handler** is responsible for handling a certain numbers of connections and devices, **Websocket Manager** helps this and store them in Redis.
 
-2. **Requirements for the Implemented Component**:
-   - **Real-time Quiz Participation**: Users should be able to join a quiz session using a unique quiz ID.
-   - **Real-time Score Updates**: Users' scores should be updated in real-time as they submit answers.
-   - **Real-time Leaderboard**: A leaderboard should display the current standings of all participants in real-time.
+#### 7. Realtime Notification Service
+Keep track of changes in the leaderboard via PubSub channel in Redis then applying a wise strategy for deliver them to clients, especially in high traffic situations.
 
-3. **Build For the Future**:
-   - **Scalability**: Design and implement your component with scalability in mind. Consider how the system would handle a large number of users or quiz sessions. Discuss any trade-offs you made in your design and implementation.
-   - **Performance**: Your component should perform well even under heavy load. Consider how you can optimize your code and your use of resources to ensure high performance.
-   - **Reliability**: Your component should be reliable and handle errors gracefully. Consider how you can make your component resilient to failures.
-   - **Maintainability**: Your code should be clean, well-organized, and easy to maintain. Consider how you can make it easy for other developers to understand and modify your code.
-   - **Monitoring and Observability**: Discuss how you would monitor the performance of your component and diagnose issues. Consider how you can make your component observable.
+#### 8. Archival Service
+It is a good fit to keep track of quiz play progress in a relational database. However, overtime data increases then relational database performance is also affected. This service is going to archive completed quiz session into a NoSQL DB to ensure relational database operation.
+#### 9. Analytics Service
+It is used for analyzing users' behaviors in the system so that we can provide them with best services.
+#### 10. Analytics and Hadoop Ecosystem
+Our system should intelligently understand users to provide personalized services, not behave like a machine. For example, when users take a quiz, we can track metrics like time spent, replay frequency, and commonly missed question types. These insights help us recommend suitable courses or quizzes based on their needs. 
 
-## Submission Guidelines
+This is where Analytics Services and the Hadoop Ecosystem come into play.
 
-Candidates are required to submit the following as part of the coding challenge:
+**Kafka**: queue for collecting logs.
 
-1. **System Design Documents**:
-   - **Architecture Diagram**: Illustrate the interaction of system components (server, client applications, database, etc.).
-   - **Component Descriptions**: Explain the role of each component.
-   - **Data Flow**: Describe how data flows from user participation to leaderboard updates.
-   - **Technology Justification**: List the chosen technologies and justify why they were selected.
+**Spark/Flink Streaming**: Support for realtime or micro-batch processing data from Kafka, we can do some realtime data processing here like finding trending quizzes.
 
-2. **Working Code**:
-   - Choose one of the core components mentioned in the requirements and implement it using your preferred technologies. The rest of the system can be mocked using appropriate mock services or data.
-   - Ensure the code meets criteria such as scalability, performance, reliability, maintainability, and observability.
+**Hadoop**: Serves as a data lake for storing large volumes of raw data from users so that we can do further analytics
 
-3. **Video Submission**:
-   - Record a short video (5-10 minutes) where you address the following:
-     - **Introduction**: Introduce yourself and state your name.
-     - **Assignment Overview**: Describe the technical assignment that ELSA gave in your own words. Feel free to mention any assumptions or clarifications you made.
-     - **Solution Overview**: Provide a crisp overview of your solution, highlighting key design and implementation elements.
-     - **Demo**: Run the code on your local machine and walk us through the output or any tests you’ve written to verify the functionality.
-     - **Conclusion**: Conclude with any remarks, such as challenges faced, learnings, or further improvements you would make.
+**SparkCluster**: We can run some spark jobs for User Profiling, Trending Quizzes, Recommendations (via Machine Learning or Deep Learning models) and some reporting jobs like the number of users enrolling courses, etc.
+### Dataflow
+![](join_quiz_update_leaderboar_flow.png)
 
-   **Video Requirements**:
-   - The video must be between **5-10 minutes**. Any submission beyond 10 minutes will be rejected upfront.
-   - Use any recording device (smartphone, webcam, etc.), ensuring good audio and video quality.
-   - Ensure clear and concise communication.
+Sequential flow for joining and updating score and leaderboard
+
+![](join_quiz_update_score.png)
+
+Note: When receiving a score change event, we can consider the following strategies:
+
+- Reload the leaderboard to update both the scores and rankings, showing the top **k** users and **m** users around the current user.
+- Update only the user's score immediately, and refresh the entire leaderboard periodically at a less frequent interval.
+
+Anyway, the choice depends on the problem requirements and involves some trade-offs.

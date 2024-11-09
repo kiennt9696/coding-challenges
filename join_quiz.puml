@@ -1,0 +1,32 @@
+@startuml
+participant "Quiz UI/User" as User
+participant "QuizPlay Service" as QP
+participant "Redis Cluster" as RC
+participant "Postgres Cluster" as DB
+participant "Vocabulary Quiz Service" as VS
+participant "Realtime Notification" as NS
+participant "Leaderboard Service" as LS
+
+User -> QP: click and join a quiz
+QP -> RC: Update leaderboard scores and send this event to redis stream
+QP -> User: Joined
+NS -> RC: consume changes
+RC -> NS: user A joined the quiz
+NS -> User: notify "user A joined the quiz"
+User -> LS: reload the leaderboard
+LS -> RC: get the leaderboard
+RC -> LS: return latest leaderboard
+LS -> User: user A appears on the leaderboard with 0 point and its rank
+User -> VS: load the quiz questions
+VS -> User: List of questions
+User -> QP: submit user's answers
+QP -> VS: Get the quiz answers
+VS -> QP: Return answers for the quiz
+QP -> RC: Update leaderboard scores and send this event to redis stream
+NS -> RC: consume scoring event
+NS -> User: notify score changes
+User -> LS: reload the leaderboard
+LS -> RC: get the leaderboard
+RC -> LS: return latest leaderboard
+LS -> User: user A appears on leaderboard with score 50 and its rank
+@enduml
