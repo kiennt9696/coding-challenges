@@ -154,5 +154,5 @@ Under any circumstances, adding replicas is necessary to share read load
 - Use some container orchestration technologies like K8s or Nomad & Consul.
 
 #### Monitoring
-- Build healthz api for api service, use heartbeat, watchdog pattern or logging to monitor worker service.
+- Building healthz api for api services, use heartbeat/watchdog pattern or logging to monitor worker services.
 - Using telegraf, prometheus, influx to monitor resource consumption, gateway logging.
