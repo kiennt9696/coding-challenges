@@ -17,17 +17,17 @@ class LeaderboardService:
     def get_top_k_users(self, quiz_id, k):
         return self.leaderboar_repo.get_top_k_players(quiz_id, k)
 
-    def get_m_users_around_rank(self, quiz_id, user_rank, m):
-        return self.leaderboar_repo.get_m_users_around_rank(quiz_id, user_rank, m)
+    def get_m_users_around_rank(self, quiz_id, user_id, user_rank, m):
+        return self.leaderboar_repo.get_m_users_around_rank(quiz_id, user_id, user_rank, m)
 
     def get_full_leaderboard_by_quiz(self, user_id, quiz_id, k=3, m=2):
         user_score = self.get_user_score(user_id, quiz_id)
         user_rank = self.get_user_rank(user_id, quiz_id)
         top_k_players = self.get_top_k_users(quiz_id, k)
-        m_users_around = self.get_m_users_around_rank(quiz_id, user_rank, m)
+        m_users_around = self.get_m_users_around_rank(quiz_id, user_id, user_rank, m)
         res = {
-            "top_users": dict(zip(["name", "score"], top_k_players)),
-            "users_around": dict(zip(["name", "score"], m_users_around)),
+            "top_users": top_k_players,
+            "users_around": m_users_around,
             "current_user": {
                 "score": user_score,
                 "rank": user_rank

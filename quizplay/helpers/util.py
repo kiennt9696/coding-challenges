@@ -64,8 +64,3 @@ def load_config(from_file=None, env=True):
         return update_config_from_environment(config)
     else:
         return config
-
-
-class ClientBase:
-    def __init__(self, client):
-        self.redis = client

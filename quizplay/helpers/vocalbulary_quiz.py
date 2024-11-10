@@ -17,15 +17,15 @@ class VocabularyQuizSDK(object):
             "id": quiz_id,
             "questions": {
                 "1": {
-                    "question": "1. How old is Bob",
+                    "question": "How old is Bob",
                     "options": {"A": "1", "B": "2", "C": "3"}
                 },
                 "2": {
-                    "question": "1. How old is Alice",
+                    "question": "How old is Alice",
                     "options": {"A": "1", "B": "2", "C": "3"}
                 },
                 "3": {
-                    "question": "1. How old is Snow",
+                    "question": "How old is Snow",
                     "options": {"A": "1", "B": "2", "C": "3"}
                 }
             }

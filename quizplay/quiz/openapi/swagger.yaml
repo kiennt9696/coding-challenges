@@ -12,6 +12,20 @@ tags:
   - name: alive
     description: Keepalive
 paths:
+  /:
+    get:
+      tags:
+        - alive
+      summary: Api keepalive
+      description: Api keepalive
+      operationId: quiz.app.index
+      responses:
+        "200":
+          description: Home quiz
+          content:
+            text/html:
+              schema:
+                type: string
   /ping:
     get:
       tags:

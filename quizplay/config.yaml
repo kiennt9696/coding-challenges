@@ -5,3 +5,4 @@ SWAGGER_FILE_PATH: swagger/swagger.yaml
 LOGGER_CONFIG_PATH: logger.conf
 ACTIONLOG_DEFAULT_ACTOR: "quiz"
 ACTIONLOG_ENABLED: true
+REDIS_NODES: "localhost:6379:0,localhost:6378:0,localhost:6377:0"

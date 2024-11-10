@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>{{ quiz_title }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/style.css') }}">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</head>
+
+<body>
+    <div class="container-fluid">
+        <h1 class="mt-5" aria-label="Quiz Results">{{ quiz_title }}</h1>
+        <div class="result-summary">
+            <h2 aria-label="Number-questions">
+                This test has {{ num_questions }} {{ 'question' if num_questions == 1 else 'questions' }}
+            </h2>
+        </div>
+        <div id="quizForm">
+            <input type="text" id="username" placeholder="Enter your username">
+            <button onclick="joinQuiz()">Join Quiz</button>
+        </div>
+        <h3 aria-label="Questions">Questions:</h3>
+        <form method="POST" action="/submit">
+    <div class="row">
+        <!-- First Half: Question Section -->
+        <div class="col-md-6">
+            <h2>Quiz Questions</h2>
+            {% for question_id, question in questions["questions"].items() %}
+            <ul class="list-group mt-3">
+                <li class="list-group-item question-item">
+                    <p class="question-text">{{question_id}}. {{ question['question'] }}</p>
+                    <div class="question" id="{{ question_id }}">
+                        <input type="hidden" name="first_modified_{{ question_id }}"
+                            id="first_modified_{{ question_id }}" value="{{ current_timestamp }}">
+                        <input type="hidden" name="last_modified_{{ question_id }}"
+                            id="last_modified_{{ question_id }}" value="{{ current_timestamp }}">
+                        <ul class="answer-list">
+                            {% for answer, answer_value in question['options'].items() %}
+                            <li class="list-group-item">
+                                <input type="checkbox" class="form-check-input" name="{{ question['question'] }}"
+                                    value="{{ answer }}" id="{{ question_id }}_{{ answer }}"
+                                    style="display: none;">
+                                <label class="answer-text" id="lbl_{{ question_id }}_{{ answer }}" for="{{ question_id }}_{{ answer }}">{{answer}}. {{ answer_value }}</label>
+                                </input>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </li>
+            </ul>
+            {% endfor %}
+            <div class="mt-4 text-center">
+                <button type="submit" class="btn btn-primary">Submit</button>
+            </div>
+        </div>
+
+        <!-- Second Half: Leaderboard Section -->
+        <div class="col-md-6">
+            <h2>Leaderboard</h2>
+            <ul class="list-group mt-3" id="leaderboard">
+                <!-- Leaderboard items will be populated dynamically -->
+            </ul>
+        </div>
+    </div>
+</form>
+    </div>
+
+
+    <script>
+        async function joinQuiz() {
+                const username = document.getElementById('username').value;
+                if (!username) {
+                    alert("Please enter a username.");
+                    return;
+                }
+                // Call the join quiz API
+                const response = await fetch('quizzes/quiz1/participants', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: username })
+                });
+                if (response.status === 204) {
+                    alert("Joined quiz successfully!");
+                } else {
+                    alert("Joined quiz failed!");
+                }
+
+        }
+        $(document).ready(function () {
+            $("input[type='checkbox']").change(function () {
+                // Toggle the selected-answer class when the checkbox changes
+                $(this).closest('li').toggleClass('selected-answer', this.checked);
+
+                // Find the closest question div to the changed checkbox
+                var questionDiv = $(this).closest('.question');
+
+                // Get the question ID from the question div
+                var questionId = questionDiv.attr('id');
+
+                // Find the hidden input field for firstModifiedField and lastModifiedField
+                var firstModifiedField = $("#first_modified_" + questionId);
+                var lastModifiedField = $("#last_modified_" + questionId);
+
+                // Check if the firstModifiedField is empty before updating
+                if (!firstModifiedField.val()) {
+                    // Update the first modified timestamp for this question
+                    var now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+                    firstModifiedField.val(now);
+                }
+
+                // Update the last modified timestamp for this question
+                var now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+                lastModifiedField.val(now);
+
+                const username = $("#username").val();
+                const answer = $(this).val();
+                console.log(questionId, username, answer);
+                $.ajax({
+                    url: 'quizzes/quiz1/answer',
+                    type: 'POST',
+                    dataType: 'json',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ "user_id": username, "question_id": questionId, "answer": answer}),
+                    success: function(response) {
+                        console.log(response)
+                        const status = response["status"]
+                        if (status === "correct") {
+                            $(`#lbl_${questionId}_${answer}`).css("color", "green")
+                        } else {
+                            $(`#lbl_${questionId}_${answer}`).css("color", "red")
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        alert(error)
+                    }
+                });
+            });
+
+            function updateLeaderboard() {
+                var username = $("#username").val();
+                const payload = {"user_id": username, "mode": "full"}
+                $.ajax({
+                    url: 'leaderboard/quiz1', // Your API endpoint that returns leaderboard data
+                    type: 'POST',
+                    dataType: 'json',
+                    contentType: 'application/json',
+                    data: JSON.stringify(payload),
+                    success: function(data) {
+                        // Assuming 'data' is an array of leaderboard items
+                        var leaderboardHtml = '';
+
+                        // Loop through the leaderboard data and build the HTML
+                        // const leaderboard = data["top_users"]
+
+                        data["top_users"].forEach(function(item, index) {
+                            leaderboardHtml += `
+                                <li class="list-group-item">
+                                    <strong>User ${index + 1}:</strong> ${item[0]} - ${item[1]} Points
+                                </li>
+                            `;
+                        });
+                        const currUser = data["current_user"];
+                        var rank = currUser.rank+1
+                        if (!username) {
+                            rank = "-"
+                            username = "unknown"
+                        }
+                        leaderboardHtml += `
+                                <li class="list-group-item">
+                                    <strong>Current user ${username}:</strong> ${currUser.score} Points || Top ${rank}
+                                </li>
+                            `
+
+                        // Update the leaderboard in the DOM
+                        $('#leaderboard').html(leaderboardHtml);
+                        console.log(data)
+                    },
+                    error: function(xhr, status, error) {
+                        // Handle error (e.g., show a message to the user)
+                        console.error("Error fetching leaderboard: " + error);
+                        $('#leaderboard').html('<li class="list-group-item">Error loading leaderboard</li>');
+                    }
+                });
+            }
+
+    // Initial leaderboard update
+    updateLeaderboard();
+
+    // Set an interval to update the leaderboard every 1 second
+    setInterval(updateLeaderboard, 1000);
+
+
+        });
+    </script>
+
+</body>
+
+</html>

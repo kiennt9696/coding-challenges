@@ -68,7 +68,7 @@ def configure_log_handlers(app):
 
     logger = logging.getLogger('root')
 
-    # unify log format for all handers
+    # unify log format for all handlers
     for h in logger.root.handlers:
         app.logger.addHandler(h)
     app.logger.setLevel(logger.root.level)
@@ -83,6 +83,7 @@ def configure_extensions(app):
     :return:
     """
     extensions.action_logger.init_app(app, logging.getLogger('action'))
+    extensions.redis_client.init_app(app)
 
 
 def configure_exception_handlers(app):

@@ -1,0 +1,77 @@
+body{
+    background-color:#CAC9B5;
+    /*font-family: Arial, sans-serif;*/
+}
+
+/* Result Summary Section */
+.result-summary h2, .result-summary h3 {
+  text-align: center;
+  margin-top: 20px;
+}
+
+/* Question List Styles */
+.question-item {
+  background-color: #f8f9fa;
+  margin-bottom: 10px;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.question-text {
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #333;
+}
+
+.answer-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+.answer-list li {
+  border-top: 1px solid #ddd;
+  padding: 8px 12px;
+}
+
+/* Icons for correct/incorrect */
+.fas.fa-check {
+  color: green;
+}
+
+.fas.fa-times {
+  color: red;
+}
+
+/* Action Buttons */
+.action-buttons {
+  text-align: center;
+  margin-top: 30px;
+}
+
+.action-buttons .btn {
+  margin: 0 10px;
+  padding: 10px 20px;
+  font-size: 1em;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .question-text {
+      font-size: 5em;
+  };
+}
+
+.question-title h3, .question-title h5 {
+  margin-bottom: 10px;
+}
+
+.ans label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.selected-answer {
+  background-color: #F3FF7F;
+  color: black;
+}

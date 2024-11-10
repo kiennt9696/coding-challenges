@@ -16,7 +16,7 @@ class QuizPlayService(object):
     def join_quiz(self, quiz_id, user_id) -> None:
         self._check_quiz_exist(quiz_id)
         # when joining just, score is 0
-        self.quiz_play_repo.update_score(quiz_id, user_id, 0)
+        self.quiz_play_repo.set_score(quiz_id, user_id, 0)
 
     def submit_answer(self, quiz_id, user_id, question_id, answer) -> bool:
         self._check_quiz_exist(quiz_id)

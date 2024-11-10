@@ -1,19 +1,27 @@
 from redis import Redis
 
-from helpers.util import ClientBase
+from helpers.redis_client import ClientBase, RedisClient
 
 
 class QuizPlayRepo(ClientBase):
-    def __init__(self, client: Redis):
+    def __init__(self, client: RedisClient):
         super().__init__(client)
 
-    def update_score(self, quiz_id: str, user_id:str, score: int) -> None:
+    def set_score(self, quiz_id: str, user_id:str, score: int) -> None:
         """
-        Using ZADD to add/update the user's score in the sorted set (leaderboard)
+        Using ZADD to set the user's score in the sorted set (leaderboard)
         O(log(n))
         """
         leaderboard_key = f"leaderboard:{quiz_id}"
 
-        self.redis.zadd(leaderboard_key, {user_id: score})
-        print(leaderboard_key, score, user_id)
+        self.redis.get_instance(user_id).zadd(leaderboard_key, {user_id: score}, nx=True)
+
+    def update_score(self, quiz_id: str, user_id:str, score: int) -> None:
+        """
+        Using ZINCRBY to add/update the user's score in the sorted set (leaderboard)
+        O(log(n))
+        """
+        leaderboard_key = f"leaderboard:{quiz_id}"
+
+        self.redis.get_instance(user_id).zincrby(leaderboard_key, score, user_id)
 
