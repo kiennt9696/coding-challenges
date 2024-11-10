@@ -132,7 +132,7 @@ It's when a quiz becomes "hot".
 Tradeoff (Acceptable):
 - adds a latency to finding top k users in the leaderboard because we need to merge top k local users.
 - adds a latency to getting user rank because we need to aggregate the local rank of the user to k top users.
-##### Sharding data by quiz_id using consistent hashing or builtin redis hash slot
+##### Sharding data by quiz_id using consistent hashing (not use builtin redis hash slot)
 - makes getting top k users and user rank located on 1 node without any overhead
 
 Tradeoff:
