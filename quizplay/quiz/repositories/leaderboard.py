@@ -16,7 +16,7 @@ class LeaderBoardRepo(ClientBase):
         leaderboard_key = f"leaderboard:{quiz_id}"
 
         # Get the score for the user
-        score = self.redis.get_instance(user_id).zscore(leaderboard_key, user_id)
+        score = self.redis.get_instance(quiz_id).zscore(leaderboard_key, user_id)
         if score is None:
             return 0
         return int(score)
@@ -29,7 +29,7 @@ class LeaderBoardRepo(ClientBase):
         leaderboard_key = f"leaderboard:{quiz_id}"
 
         # Get the rank for the user
-        rank = self.redis.get_instance(user_id).zrevrank(leaderboard_key, user_id)
+        rank = self.redis.get_instance(quiz_id).zrevrank(leaderboard_key, user_id)
         if rank is None:
             return -1
         return int(rank)
@@ -38,6 +38,14 @@ class LeaderBoardRepo(ClientBase):
         """
         Using ZREVRANGE
         O(log(n) + k)
+        """
+        leaderboard_key = f"leaderboard:{quiz_id}"
+        top_players = self.redis.get_instance(quiz_id).zrevrange(leaderboard_key, 0, k - 1, withscores=True)
+        return [(user.decode('utf-8'), int(score)) for user, score in top_players]
+
+    def get_top_k_players_shard_by_user_id(self, quiz_id: str, k: int) -> List[Tuple[str, int]]:
+        """
+        Using ZREVRANGE
         """
         leaderboard_key = f"leaderboard:{quiz_id}"
         local_topk_candidates = []
@@ -55,7 +63,7 @@ class LeaderBoardRepo(ClientBase):
         leaderboard_key = f"leaderboard:{quiz_id}"
         start = max(0, user_rank - m // 2)
         end = user_rank + m // 2
-        users_around_rank = self.redis.get_instance(user_id).zrevrange(leaderboard_key, start, end, withscores=True)
+        users_around_rank = self.redis.get_instance(quiz_id).zrevrange(leaderboard_key, start, end, withscores=True)
         return [(user.decode('utf-8'), int(score)) for user, score in users_around_rank]
 
 

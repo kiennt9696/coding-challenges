@@ -14,7 +14,7 @@ class QuizPlayRepo(ClientBase):
         """
         leaderboard_key = f"leaderboard:{quiz_id}"
 
-        self.redis.get_instance(user_id).zadd(leaderboard_key, {user_id: score}, nx=True)
+        self.redis.get_instance(quiz_id).zadd(leaderboard_key, {user_id: score}, nx=True)
 
     def update_score(self, quiz_id: str, user_id:str, score: int) -> None:
         """
@@ -23,5 +23,5 @@ class QuizPlayRepo(ClientBase):
         """
         leaderboard_key = f"leaderboard:{quiz_id}"
 
-        self.redis.get_instance(user_id).zincrby(leaderboard_key, score, user_id)
+        self.redis.get_instance(quiz_id).zincrby(leaderboard_key, score, user_id)
 

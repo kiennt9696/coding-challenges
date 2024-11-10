@@ -14,9 +14,9 @@ class RedisClient:
         for idx, connection_str in enumerate(app.config['REDIS_NODES'].split(",")):
             host, port, db = connection_str.split(':')
             self.instances[idx] = redis.Redis(host=host, port=port, db=db)
-    def get_instance(self, user_id: str) -> Redis:
+    def get_instance(self, shard_key: str) -> Redis:
         ring = HashRing(self.instances.keys())
-        return self.instances[ring.get_node(user_id)]
+        return self.instances[ring.get_node(shard_key)]
 
 class ClientBase:
     def __init__(self, client: RedisClient):

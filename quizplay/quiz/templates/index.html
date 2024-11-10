@@ -23,7 +23,6 @@
             <input type="text" id="username" placeholder="Enter your username">
             <button onclick="joinQuiz()">Join Quiz</button>
         </div>
-        <h3 aria-label="Questions">Questions:</h3>
         <form method="POST" action="/submit">
     <div class="row">
         <!-- First Half: Question Section -->
@@ -53,9 +52,6 @@
                 </li>
             </ul>
             {% endfor %}
-            <div class="mt-4 text-center">
-                <button type="submit" class="btn btn-primary">Submit</button>
-            </div>
         </div>
 
         <!-- Second Half: Leaderboard Section -->
@@ -164,14 +160,22 @@
                             `;
                         });
                         const currUser = data["current_user"];
-                        var rank = currUser.rank+1
+                        var rank = currUser.rank
+                        var score = currUser.score
+                        if (currUser.rank !== -1) {
+                            rank = currUser.rank+1
+                        } else {
+                            rank = "-"
+                            score = "-"
+                        }
                         if (!username) {
                             rank = "-"
+                            score = "-"
                             username = "unknown"
                         }
                         leaderboardHtml += `
                                 <li class="list-group-item">
-                                    <strong>Current user ${username}:</strong> ${currUser.score} Points || Top ${rank}
+                                    <strong>Current user ${username}:</strong> ${score} Points || Top ${rank}
                                 </li>
                             `
 

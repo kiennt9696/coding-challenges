@@ -25,6 +25,23 @@ Assuming that, we need to store the user id and score.
 => ~ 50 bytes
 
 So total memory required on a monthly basis would be 50*50 million bytes i.e. 2500 MB memory.
+## Redis Sorted Set
+```angular2html
+ZADD leaderboard:quiz_id score user_id
+---------------------------------------
+(extendable)
+ZADD leaderboard:123:daily 5000 user1
+ZADD leaderboard:123:weekly 3000 user2
+ZADD leaderboard:123:monthly 4500 user3
+```
+Commands to use
+```angular2html
+ZADD: to join users to a quiz session (O(log(n)))
+ZINCRBY: to update scores (O(log(n)))
+ZSCORE: to get a user score (O(log(n)))
+ZREVRANK: to get the rank of a user (O(log(n)))
+ZREVRANGE: to get top k users/players in the leaderboard (O(log(n) + k)), get m users around the current user rank (O(log(n) + m))
+```
 ## High level design
 ![](realtimeLB.png)
 ### Components
@@ -105,3 +122,37 @@ Note: When receiving a score change event, we can consider the following strateg
 - Update only the user's score immediately, and refresh the entire leaderboard periodically at a less frequent interval.
 
 Anyway, the choice depends on the problem requirements and involves some trade-offs.
+### Technical Challenges
+#### 1. Hotspots & data sharding
+It's when a quiz becomes "hot".
+
+##### Sharding data by user_id/username 
+- makes data distributed evenly => solve the hotspots
+
+Tradeoff (Acceptable):
+- adds a latency to finding top k users in the leaderboard because we need to merge top k local users.
+- adds a latency to getting user rank because we need to aggregate the local rank of the user to k top users.
+##### Sharding data by quiz_id
+- makes getting top k users and user rank located on 1 node without any overhead
+
+Tradeoff:
+- Cannot resolve hotspots
+##### Adding replicas for sharing read
+Under any circumstances, adding replicas is necessary to share read load
+
+
+=> Combining both sharding by users and quiz_id: sharding by quiz_id for regular quizzes then sharding by users when they are "hot". 
+#### 2. Realtime notification for a large amount of traffic
+- Push-based model and Websockets
+- Scale websockets (state machine for websocket manager)
+- Wise strategies:
+  + Categorizing urgent events, less critical data is used with pull model periodically. For example, we update user's score rank immediately but only refresh the whole dashboard when user's rank is changed.
+  + Mini-batching technique
+- Using circuit breaker
+#### 3. Auto-scaling
+- Dynamic port instance scaling with internal traffic gateway (like Traefik).
+- Use some container orchestration technologies like K8s or Nomad & Consul.
+
+#### Monitoring
+- Build healthz api for api service, use heartbeat, watchdog pattern or logging to monitor worker service.
+- Using telegraf, prometheus, influx to monitor resource consumption, gateway logging.

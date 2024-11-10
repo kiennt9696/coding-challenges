@@ -4,7 +4,7 @@ body{
 }
 
 /* Result Summary Section */
-.result-summary h2, .result-summary h3 {
+.result-summary h2, .result-summary h3, h1 {
   text-align: center;
   margin-top: 20px;
 }

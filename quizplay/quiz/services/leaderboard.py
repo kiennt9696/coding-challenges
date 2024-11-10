@@ -20,7 +20,7 @@ class LeaderboardService:
     def get_m_users_around_rank(self, quiz_id, user_id, user_rank, m):
         return self.leaderboar_repo.get_m_users_around_rank(quiz_id, user_id, user_rank, m)
 
-    def get_full_leaderboard_by_quiz(self, user_id, quiz_id, k=3, m=2):
+    def get_full_leaderboard_by_quiz(self, user_id, quiz_id, k=100, m=2):
         user_score = self.get_user_score(user_id, quiz_id)
         user_rank = self.get_user_rank(user_id, quiz_id)
         top_k_players = self.get_top_k_users(quiz_id, k)
