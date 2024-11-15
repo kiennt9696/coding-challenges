@@ -152,11 +152,24 @@ Under any circumstances, adding replicas is necessary to share read load
 - Wise strategies:
   + Categorizing urgent events, less critical data is used with pull model periodically. For example, we update user's score rank immediately but only refresh the whole dashboard when user's rank is changed.
   + Mini-batching technique
+  + Backoff with jiter (both client and server)
 - Using circuit breaker
-#### 3. Auto-scaling
+#### 3. Hybrid Persistence
+Combining both Snapshot and AOF
+#### 4. Auto-scaling
 - Dynamic port instance scaling with internal traffic gateway (like Traefik).
 - Use some container orchestration technologies like K8s or Nomad & Consul.
 
-#### Monitoring
+#### 5. Monitoring
 - Building healthz api for api services, use heartbeat/watchdog pattern or logging to monitor worker services.
 - Using telegraf, prometheus, influx to monitor resource consumption, gateway logging.
+
+#### 6. Further development
+Many types of leaderboard, support any time range, approximation approach should be in consideration.
+##### Precise solution
+- using publishing service -> kafka -> spark streaming -> hadoop (parquet files) -> leaderboard
+- mapreduce -> local top k then merge into global top k
+##### Approximation solution
+Many layers:
+- Windowed top k: Spark streaming -> Flink cluster -> TSDB 
+- Count Min Sketch: Kafka -> CMS (master - replica) -> TSDB
