@@ -1,6 +1,4 @@
 # Vocabulary Quiz System Design
-## Explaination Video: 
-[Visit here](https://drive.google.com/file/d/1UNLWE_gA-tYjzbbX6jvR3UvIW4XVhqMk/view?usp=drivesdk)
 ## Demo
 [Visit here](https://drive.google.com/file/d/1mX6ds17MT2Z-q11JPuJvGlHQTyCCKF41/view?usp=drivesdk)
 ## Functional Requirements
